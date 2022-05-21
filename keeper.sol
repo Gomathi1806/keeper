@@ -1,5 +1,5 @@
 //SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.4;
+pragma solidity 0.8.7;
 
 // KeeperCompatible.sol imports the functions from both ./KeeperBase.sol and
 // ./interfaces/KeeperCompatibleInterface.sol
@@ -12,6 +12,9 @@ contract CrypChip is KeeperCompatibleInterface {
     using Counters for Counters.Counter;
     Counters.Counter private gIds;
     Counters.Counter private eIds;
+
+    uint interval = 5;
+    uint lastTimeStamp;
 
     enum ExpenseStatus {
         ACTIVE,
@@ -50,6 +53,10 @@ contract CrypChip is KeeperCompatibleInterface {
 
     //How many expense groups is an inidividual a part of
     mapping(address => ExpenseGroup[]) expenseGroups;
+
+    constructor() {
+        lastTimeStamp = block.timestamp;
+    }
 
     function createGroup(address[] memory participants) public returns(bool){
 
@@ -126,25 +133,9 @@ contract CrypChip is KeeperCompatibleInterface {
             }
         }
 
-        function checkUpkeep(bytes calldata /* checkData */){
-          external
-          override
-          returns ( bool upkeepNeeded,bytes memory /* performData */)  
-        }
-         
-        {
-        upkeepNeeded = (block.timestamp - lastTimeStamp) > interval;
-        }
-
-        function performUpkeep(
-        bytes calldata /* performData */
-        ) external override {
-        lastTimeStamp = block.timestamp;
-        }
-
-        if (counter >= creatorArray.length) {
-            counter = 0;
-        }
+        // if (counter >= creatorArray.length) {
+        //     counter = 0;
+        // }
 
         if(counter == newExpense.participants.length){
             newExpense.status = ExpenseStatus.SETTLED;
@@ -154,7 +145,23 @@ contract CrypChip is KeeperCompatibleInterface {
         }
 
         return expenses[expenseId].status;
+
     }
+
+    function checkUpkeep(bytes calldata /* checkData */) external view override returns (bool upkeepNeeded, bytes memory /* performData */){        
+        upkeepNeeded = (block.timestamp - lastTimeStamp) > interval;
+    }    
+
+
+    function performUpkeep(
+        bytes calldata /* performData */
+        ) external override {
+            
+        lastTimeStamp = block.timestamp;
+
+        //SettleUp();
+    }
+
 
     /// ALL THE GET CALLS ARE BELOW
 
